@@ -1,5 +1,6 @@
 from settings import API_KEY, API_SECRET
 from binance.client import Client
+from binance.exceptions import *
 from binance.enums import *
 from decimal import *
 
@@ -23,8 +24,8 @@ def buy(currency):
     btc_balance = client.get_account()['balances'][0]['free']
     print(Colors.FAIL + 'Using your full BTC balance: ' +
           btc_balance + Colors.ENDC + '\n')
-    btc_amount = float(btc_balance)
 
+    btc_amount = float(btc_balance)
     symbol = currency + 'BTC'
     info = client.get_symbol_info(currency+'BTC')
 
@@ -39,52 +40,58 @@ def buy(currency):
         quantity = Decimal(
             btc_amount/buy_price).quantize(Decimal('1.'), rounding=ROUND_DOWN)
 
-    # Change to client.create_order
-    client.create_test_order(
-        symbol=symbol,
-        side=SIDE_BUY,
-        type=ORDER_TYPE_MARKET,
-        quantity=quantity
-    )
-
-    print(
-        Colors.HEADER +
-        '# ------------------------------------------------------------------------- #'
-        + Colors.ENDC
-    )
-    print(
-        Colors.HEADER + '#  ' +
-        Colors.OKGREEN + 'BUY order of ' + str(quantity) + ' ' +
-        str(symbol) + ' set @ ' +
-        str(buy_price) + ' BTC ' + ' totalling ' +
-        str(buy_price*float(quantity)) + ' BTC'
-    )
+    try:
+        # Change to client.create_order
+        client.create_test_order(
+            symbol=symbol,
+            side=SIDE_BUY,
+            type=ORDER_TYPE_MARKET,
+            quantity=quantity
+        )
+        print(
+            Colors.HEADER +
+            '# ------------------------------------------------------------------------- #'
+            + Colors.ENDC
+        )
+        print(
+            Colors.HEADER + '#  ' +
+            Colors.OKGREEN + 'BUY order of ' + str(quantity) + ' ' +
+            str(symbol) + ' set @ ' +
+            str(buy_price) + ' BTC ' + ' totalling ' +
+            str(buy_price*float(quantity)) + ' BTC'
+        )
+    except BinanceOrderException as e:
+        print(Colors.FAIL + e.status_code)
+        print(e.message + Colors.ENDC)
 
     sell_price = Decimal(
         1.5*buy_price).quantize(Decimal(str(price_jump)), rounding=ROUND_DOWN)
 
-    # Change to client.create_order
-    client.create_test_order(
-        symbol=currency + 'BTC',
-        side=SIDE_SELL,
-        type=ORDER_TYPE_LIMIT,
-        timeInForce=TIME_IN_FORCE_GTC,
-        quantity=quantity,
-        price=sell_price
-    )
-
-    print(
-        Colors.HEADER + '#  ' +
-        Colors.OKCYAN + 'SELL order of ' + str(quantity) + ' ' +
-        str(symbol) + ' set @ ' +
-        str(sell_price) + ' BTC ' + ' totalling ' +
-        str(sell_price*quantity) + ' BTC'
-    )
-    print(
-        Colors.HEADER +
-        '# ------------------------------------------------------------------------- #'
-        + Colors.ENDC
-    )
+    try:
+        # Change to client.create_order
+        client.create_test_order(
+            symbol=currency + 'BTC',
+            side=SIDE_SELL,
+            type=ORDER_TYPE_LIMIT,
+            timeInForce=TIME_IN_FORCE_GTC,
+            quantity=quantity,
+            price=sell_price
+        )
+        print(
+            Colors.HEADER + '#  ' +
+            Colors.OKCYAN + 'SELL order of ' + str(quantity) + ' ' +
+            str(symbol) + ' set @ ' +
+            str(sell_price) + ' BTC ' + ' totalling ' +
+            str(sell_price*quantity) + ' BTC'
+        )
+        print(
+            Colors.HEADER +
+            '# ------------------------------------------------------------------------- #'
+            + Colors.ENDC
+        )
+    except BinanceOrderException as e:
+        print(Colors.FAIL + e.status_code)
+        print(e.message + Colors.ENDC)
 
 
 print(Colors.BOLD + Colors.OKBLUE + 'Enter a coin abbreviation: ' + Colors.ENDC)
